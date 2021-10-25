@@ -33,30 +33,33 @@ class RadioBrowser {
     return Uri.https(baseUrl!, endpoint, args);
   }
 
+  Future get(Uri uri) async {
+    var response = await http.get(uri, headers: _headers);
+
+    if (response.statusCode == HttpStatus.ok) {
+      // Response is in UTF8 so we need to decode bytes
+      return utf8.decode(response.bodyBytes);
+    }
+    throw Error();
+  }
+
   Future<List<Station>> search(String name) async {
     final endpoint = "$format/stations/search";
     final uri = await buildUri(endpoint, {'name': name});
 
-    final response = await http.get(uri);
     final List<Station> stations = [];
-    if (response.statusCode == HttpStatus.ok) {
-      // Response is in UTF8 so we need to decode bytes
-      final decoded = utf8.decode(response.bodyBytes);
-      final json = jsonDecode(decoded) as List<dynamic>;
-      for (final row in json) {
+
+    try {
+      final decoded = await get(uri);
+      final jsonData = jsonDecode(decoded) as List<dynamic>;
+      for (final row in jsonData) {
         stations.add(Station.fromJson(row));
       }
+    } catch (error) {
+      rethrow;
     }
+
     return stations;
   }
-
-  Future get(Uri uri) async {
-    _headers['content-type'] = format;
-    var response = await http.get(uri, headers: _headers);
-    if (response.statusCode == HttpStatus.ok) {
-      return response.body;
-    }
-
-    return Null;
-  }
 }
+
