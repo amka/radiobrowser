@@ -5,6 +5,8 @@ import 'dart:math';
 import 'package:http/http.dart' as http;
 import 'package:radiobrowser/src/models/station.dart';
 
+import 'models/country.dart';
+
 /// Checks if you are awesome. Spoiler: you are.
 class RadioBrowser {
   final String format;
@@ -28,9 +30,9 @@ class RadioBrowser {
     return (await serverIp.reverse()).host;
   }
 
-  Future<Uri> buildUri(String endpoint, Map<String, String> args) async {
+  Future<Uri> buildUri(String endpoint, {Map<String, String>? params}) async {
     baseUrl ??= await getBaseUrl();
-    return Uri.https(baseUrl!, endpoint, args);
+    return Uri.https(baseUrl!, endpoint, params);
   }
 
   Future get(Uri uri) async {
@@ -43,9 +45,12 @@ class RadioBrowser {
     throw Error();
   }
 
+  /// Advanced search.
+  ///
+  /// It will search for the station whose attribute contains the search [name].
   Future<List<Station>> search(String name) async {
     final endpoint = "$format/stations/search";
-    final uri = await buildUri(endpoint, {'name': name});
+    final uri = await buildUri(endpoint, params: {'name': name});
 
     final List<Station> stations = [];
 
@@ -61,5 +66,23 @@ class RadioBrowser {
 
     return stations;
   }
-}
 
+  /// Returns list of [Country].
+  Future<List<Country>> countries() async {
+    final endpoint = "$format/countries";
+    final uri = await buildUri(endpoint);
+
+    final List<Country> countries = [];
+    try {
+      final decoded = await get(uri);
+      final jsonData = jsonDecode(decoded) as List<dynamic>;
+      for (final row in jsonData) {
+        countries.add(Country.fromJson(row));
+      }
+    } catch (error) {
+      rethrow;
+    }
+
+    return countries;
+  }
+}
