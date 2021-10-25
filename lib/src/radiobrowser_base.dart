@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:radiobrowser/src/models/station.dart';
 
 import 'models/country.dart';
+import 'models/country_code.dart';
 
 /// Checks if you are awesome. Spoiler: you are.
 class RadioBrowser {
@@ -84,5 +85,25 @@ class RadioBrowser {
     }
 
     return countries;
+  }
+
+  /// Returns list of [CountryCode].
+  Future<List<CountryCode>> countryCodes({String? code}) async {
+    final endpoint = "$format/countrycodes/${code ?? ''}";
+
+    final uri = await buildUri(endpoint);
+
+    final List<CountryCode> countryCodes = [];
+    try {
+      final decoded = await get(uri);
+      final jsonData = jsonDecode(decoded) as List<dynamic>;
+      for (final row in jsonData) {
+        countryCodes.add(CountryCode.fromJson(row));
+      }
+    } catch (error) {
+      rethrow;
+    }
+
+    return countryCodes;
   }
 }
